@@ -33,6 +33,36 @@
             ]
           }
         },
+        "terminals.location": {
+          "description": "Where to open terminals: 'panel' (default), 'editor', or an object with target, viewColumn, and preserveFocus",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["panel", "editor"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "target": {
+                  "type": "string",
+                  "enum": ["panel", "editor"]
+                },
+                "viewColumn": {
+                  "description": "Editor column: 'active', 'beside', or 1-9",
+                  "oneOf": [
+                    { "type": "string", "enum": ["active", "beside"] },
+                    { "type": "integer", "minimum": 1, "maximum": 9 }
+                  ]
+                },
+                "preserveFocus": {
+                  "type": "boolean"
+                }
+              },
+              "required": ["target"],
+              "additionalProperties": false
+            }
+          ]
+        },
         "terminals.multiplexer": {
           "type": "string",
           "description": "The terminal multiplexer that persistent terminals will use",
@@ -97,6 +127,35 @@
                 "items": {
                   "type": "string"
                  }
+              },
+              "location": {
+                "description": "Where to open this terminal. Overrides group-level location",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "enum": ["panel", "editor"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "target": {
+                        "type": "string",
+                        "enum": ["panel", "editor"]
+                      },
+                      "viewColumn": {
+                        "oneOf": [
+                          { "type": "string", "enum": ["active", "beside"] },
+                          { "type": "integer", "minimum": 1, "maximum": 9 }
+                        ]
+                      },
+                      "preserveFocus": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["target"],
+                    "additionalProperties": false
+                  }
+                ]
               },
               "persistent": {
                 "type": "string",

@@ -3,7 +3,44 @@
 
 import vscode from 'vscode';
 import {delay, getTerminalByName, isUndefined} from './utils';
-import type {Terminal} from './types';
+import type {LocationConfig, Terminal} from './types';
+
+/* LOCATION */
+
+const VIEW_COLUMN_MAP: Record<string, vscode.ViewColumn> = {
+  'active': vscode.ViewColumn.Active,
+  'beside': vscode.ViewColumn.Beside
+};
+
+const resolveLocation = ( config: LocationConfig | undefined ): vscode.TerminalLocation | vscode.TerminalEditorLocationOptions | undefined => {
+
+  if ( !config ) return undefined;
+
+  if ( config === 'panel' ) return vscode.TerminalLocation.Panel;
+
+  if ( config === 'editor' ) return vscode.TerminalLocation.Editor;
+
+  if ( config.target === 'panel' ) return vscode.TerminalLocation.Panel;
+
+  if ( config.target === 'editor' ) {
+
+    if ( config.viewColumn !== undefined || config.preserveFocus !== undefined ) {
+
+      const viewColumn = typeof config.viewColumn === 'number'
+        ? config.viewColumn
+        : VIEW_COLUMN_MAP[config.viewColumn ?? 'active'] ?? vscode.ViewColumn.Active;
+
+      return { viewColumn, preserveFocus: config.preserveFocus };
+
+    }
+
+    return vscode.TerminalLocation.Editor;
+
+  }
+
+  return undefined;
+
+};
 
 /* HELPERS */
 
@@ -25,7 +62,8 @@ const Runner = {
     const cacheKey = target || name;
     const cacheTerm = recycle && ID_TO_INSTANCE.get ( cacheKey ) || getTerminalByName ( cacheKey );
     const cacheParentTerm = split && ID_TO_INSTANCE.get ( split );
-    const location = cacheParentTerm ? { parentTerminal: cacheParentTerm } : undefined;
+    const resolvedLocation = resolveLocation ( terminal.location );
+    const location = cacheParentTerm && !resolvedLocation ? { parentTerminal: cacheParentTerm } : resolvedLocation;
     const title = dynamicTitle ? undefined : cacheKey;
     const colorPath = color ? new vscode.ThemeColor ( color ) : undefined;
     const iconPath = icon ? new vscode.ThemeIcon ( icon ) : undefined;

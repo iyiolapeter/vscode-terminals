@@ -9,6 +9,12 @@ type Env = {
   [key: string]: string
 };
 
+type LocationConfig = 'panel' | 'editor' | {
+  target: 'panel' | 'editor',
+  viewColumn?: 'active' | 'beside' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9,
+  preserveFocus?: boolean
+};
+
 type Group = {
   autorun: boolean,
   autokill: boolean,
@@ -16,6 +22,7 @@ type Group = {
   workspace: string | undefined,
 
   env: Env,
+  location: LocationConfig | undefined,
   multiplexer: Multiplexer | undefined,
   shellPath: string | undefined,
   shellArgs: string[],
@@ -81,6 +88,7 @@ type Terminal = {
   cwd: string | undefined,
   commands: string[],
 
+  location: LocationConfig | undefined,
   persistent: string | undefined,
   split: string | undefined,
   target: string | undefined,
@@ -111,4 +119,4 @@ type TerminalQuickPickItem = vscode.QuickPickItem & {
 
 /* EXPORT */
 
-export type {Env, Group, GroupRaw, GroupQuickPickItem, Multiplexer, SubstitutionsMap, SubstitutionsEnvMap, SubstitutionsOptions, Terminal, TerminalRaw, TerminalQuickPickItem};
+export type {Env, Group, GroupRaw, GroupQuickPickItem, LocationConfig, Multiplexer, SubstitutionsMap, SubstitutionsEnvMap, SubstitutionsOptions, Terminal, TerminalRaw, TerminalQuickPickItem};

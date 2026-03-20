@@ -9,7 +9,7 @@ import JSONC from 'tiny-jsonc';
 import * as vscode from 'vscode';
 import Substitutions from './substitutions';
 import {getConfig, getProjectRootPath, getProjectRootPaths} from 'vscode-extras';
-import type {Env, Group, Multiplexer, Terminal, TerminalQuickPickItem} from './types';
+import type {Env, Group, LocationConfig, Multiplexer, Terminal, TerminalQuickPickItem} from './types';
 
 /* MAIN */
 
@@ -42,6 +42,32 @@ const getConfigPath = ( rootPath?: string ): string | undefined => {
   const configPath = path.join ( rootPath, '.vscode', 'terminals.json' );
 
   return configPath;
+
+};
+
+const getLocationFromUnknown = ( value: unknown ): LocationConfig | undefined => {
+
+  if ( value === 'panel' || value === 'editor' ) return value;
+
+  if ( isObject ( value ) ) {
+
+    const target = value['target'];
+
+    if ( target !== 'panel' && target !== 'editor' ) return undefined;
+
+    const viewColumn = value['viewColumn'];
+    const validViewColumn: LocationConfig extends infer _ ? 'active' | 'beside' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | undefined : never =
+      viewColumn === 'active' || viewColumn === 'beside' ? viewColumn
+      : isNumber ( viewColumn ) && viewColumn >= 1 && viewColumn <= 9 ? viewColumn as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      : undefined;
+
+    const preserveFocus = isBoolean ( value['preserveFocus'] ) ? value['preserveFocus'] : undefined;
+
+    return { target, viewColumn: validViewColumn, preserveFocus };
+
+  }
+
+  return undefined;
 
 };
 
@@ -80,17 +106,18 @@ const getGroupFromUnknown = ( value: unknown, workspace?: string ): Group | unde
   const autorun = isBoolean ( value['autorun'] ) ? value['autorun'] : false;
   const autokill = isBoolean ( value['autokill'] ) ? value['autokill'] : false;
 
+  const location = getLocationFromUnknown ( value['location'] );
   const multiplexer = value['multiplexer'] === 'screen' || value['multiplexer'] === 'tmux' ? value['multiplexer'] : undefined;
   const shellPath = isString ( value['shellPath'] ) ? substitute ( untildify ( value['shellPath'] ) ) : undefined;
   const shellArgs = isArray ( value['shellArgs'] ) && value['shellArgs'].every ( isString ) ? value['shellArgs'].map ( substitute ) : [];
 
-  const group: Group = { autorun, autokill, workspace, env, multiplexer, shellPath, shellArgs, terminals: [] };
+  const group: Group = { autorun, autokill, workspace, env, location, multiplexer, shellPath, shellArgs, terminals: [] };
   const terminals = isArray ( value['terminals'] ) ? value['terminals'].map ( terminal => getTerminalFromUnknown ( terminal, group ) ).filter ( isTruthy ) : [];
 
   return {
     autorun, autokill,
     workspace,
-    env, multiplexer, shellPath, shellArgs,
+    env, location, multiplexer, shellPath, shellArgs,
     terminals
   };
 
@@ -209,6 +236,7 @@ const getTerminalFromUnknown = ( value: unknown, group: Group ): Terminal | unde
   const icon = isString ( value['icon'] ) ? value['icon'] : undefined;
   const color = isString ( value['color'] ) ? value['color'] : undefined;
 
+  const location = getLocationFromUnknown ( value['location'] ) ?? group.location;
   const persistent = isString ( value['persistent'] ) ? value['persistent'] : undefined;
   const split = isString ( value['split'] ) ? value['split'] : undefined;
   const target = isString ( value['target'] ) ? value['target'] : undefined;
@@ -238,7 +266,7 @@ const getTerminalFromUnknown = ( value: unknown, group: Group ): Terminal | unde
     autorun, autokill,
     name, description, icon, color,
     workspace, cwd, commands,
-    persistent, split, target,
+    location, persistent, split, target,
     dynamicTitle, recycle, open, focus, execute,
     onlyAPI, onlySingle, onlyMultiple,
     env, multiplexer, shellPath, shellArgs
@@ -327,7 +355,7 @@ const untildify = ( filePath: string ): string => {
 /* EXPORT */
 
 export {getConfigPath};
-export {getEnvFromUnknown};
+export {getEnvFromUnknown, getLocationFromUnknown};
 export {getGroupFromUnknown, getGroupQuickPickItems};
 export {getGroups, getGroupsFromInternalConfig, getGroupsFromExternalConfig, getGroupsFromExternalConfigs, getGroupsQuickPickItems};
 export {getMultiplexerReattachCommand};
